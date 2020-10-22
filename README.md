@@ -1,4 +1,5 @@
-# mksprite2 - Create sprite and background objects for use with S2DEX microcode projects on Nintendo 64
+# mksprite2
+### Create sprite and background objects for use with S2DEX microcode projects on Nintendo 64
 
 ## Usage
 `python3 mksprite.py -h` for full help
