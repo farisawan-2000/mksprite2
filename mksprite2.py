@@ -7,6 +7,8 @@ try:
 except ModuleNotFoundError:
     argcomplete = None
 
+# My lib/ functions
+from lib.img_converters import to5551, to8888
 
 
 parser = argparse.ArgumentParser(
@@ -77,6 +79,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--format",
+    dest="fmt",
+    choices=["RGBA16", "RGAB32"],
+    help="Image Format (default RGBA16).",
+    default="RGBA16",
+)
+
+parser.add_argument(
 	"-a",
     "--autoresize",
     dest="autoresize",
@@ -118,20 +128,8 @@ valid_loadblock_widths = [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48, 64, 72, 76, 
 def closest(lst, K):
     return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))] 
 
-clamp = lambda x : (int(x) & 0x1F)
 
 ls = lambda x : [name for name in os.listdir(args.input_file)]
-
-def to5551(t):
-	r = (t[0] / 255) * 31
-	g = (t[1] / 255) * 31
-	b = (t[2] / 255) * 31
-	a = 0
-	if len(t) == 4:
-		if t[3] == 255:
-			a = 1
-	return ((clamp(r) << 11)) | (clamp(g) << 6) | (clamp(b) << 1) | a
-
 
 img_count = 0
 
@@ -144,7 +142,14 @@ def get_bg_sym(i):
 def get_image_header(i):
 	return "ALIGNED8 u16 "+get_image_sym(i, img_count)+"[] = {"
 
-
+def get_image_fmt():
+	if args.fmt in ["RGBA16", "RGAB32"]:
+		return "G_IM_FMT_RGBA"
+def get_image_size():
+	if args.fmt =="RGBA16":
+		return "G_IM_SIZ_16b"
+	if args.fmt =="RGBA32":
+		return "G_IM_SIZ_32b"
 
 def handle_mode_0(infile):
 	global width
@@ -222,10 +227,10 @@ def make_obj():
 	imstr+="\n".join(["{",
 	"\t0<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, paddingX */\n" % width,
 	"\t0<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, paddingY */" % height,
-	"\tGS_PIX2TMEM(32, G_IM_SIZ_16b),    /* imageStride */",
-	"\tGS_PIX2TMEM(0, G_IM_SIZ_16b),     /* imageAdrs   */",
-	"\tG_IM_FMT_RGBA,                    /* imageFmt    */",
-	"\tG_IM_SIZ_16b,                     /* imageSiz    */",
+	"\tGS_PIX2TMEM(%d, %s),    /* imageStride */" % (width, get_image_size()),
+	"\tGS_PIX2TMEM(0, %s),     /* imageAdrs   */" % get_image_size(),
+	"\t%s,                    /* imageFmt    */" % get_image_fmt(),
+	"\t%s,                     /* imageSiz    */" % get_image_size(),
 	"\t0,                                /* imagePal    */",
 	"\t0                                 /* imageFlags  */",
 	"};\n"])
@@ -290,7 +295,7 @@ def make_bg_dl():
 	imstr+="\n};"
 	return imstr
 
-def make_sprite_dl():
+def make_sprite_dl(args, icount):
 	imstr = "Gfx %s_sprite_dl[] = {\n" % args.sprite_name
 	imstr += '\n'.join([
 	"\tgsDPPipeSync(),",
@@ -298,7 +303,7 @@ def make_sprite_dl():
 	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
 	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
 	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
-	"\tgsSPObjLoadTxtr(&%s_tex%s)," % (args.sprite_name,"[0]" if img_count > 0 else ""),
+	"\tgsSPObjLoadTxtr(&%s_tex%s)," % (args.sprite_name,"[0]" if icount > 0 else ""),
 	"\tgsSPObjMatrix(&%s_mtx)," % args.sprite_name,
 	"\tgsSPObjSprite(&%s_obj)," % args.sprite_name,
 	"\tgsSPEndDisplayList(),",
@@ -356,7 +361,7 @@ if mode == 0:
 	output_buffer += make_init_matrix()
 	output_buffer += make_obj()
 	if args.create_dl:
-		output_buffer += make_sprite_dl()
+		output_buffer += make_sprite_dl(args, img_count)
 elif mode == 1:
 	print("Warning: When using animated sprites with SM64 Decomp, due to space restraints,")
 	print("\tyou might have to split up the output file.\n")
@@ -374,7 +379,7 @@ elif mode == 1:
 		if img_count > 0:
 			output_buffer += make_ani_sprite_dl()
 		else:
-			output_buffer += make_sprite_dl()
+			output_buffer += make_sprite_dl(args, img_count)
 elif mode == 2:
 	output_buffer += handle_mode_0(args.input_file)
 	if args.init_dl:
