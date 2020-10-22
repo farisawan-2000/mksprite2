@@ -331,7 +331,10 @@ def gen_header():
 	if not args.bgrect:
 		imstr += "extern uObjMtx %s_mtx;\n" % args.sprite_name
 		imstr += "extern uObjSprite %s_obj;\n" % args.sprite_name
-		imstr += "extern Gfx %s_sprite_dl[];\n" % args.sprite_name
+		if img_count > 0:
+			imstr += "extern void call_%s_sprite_dl(int idx);\n" % args.sprite_name
+		else:
+			imstr += "extern Gfx %s_sprite_dl[];\n" % args.sprite_name
 	else:
 		imstr += "extern uObjBg %s_bg;\n" % args.sprite_name
 		imstr += "extern Gfx %s_bg_dl[];\n" % args.sprite_name
@@ -355,6 +358,8 @@ if mode == 0:
 	if args.create_dl:
 		output_buffer += make_sprite_dl()
 elif mode == 1:
+	print("Warning: When using animated sprites with SM64 Decomp, due to space restraints,")
+	print("\tyou might have to split up the output file.\n")
 	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	for i in ls(args.input_file):
 		output_buffer += handle_mode_1(i)
@@ -386,3 +391,5 @@ if args.header_file:
 with open(args.output_file, "w+") as f:
 	f.write(output_buffer)
 	f.write("// "+str(width)+" "+str(height))
+
+print("Done.")
