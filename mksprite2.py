@@ -135,6 +135,8 @@ convert_rgba16 = lambda x : to5551(x)
 convert_rgba32 = lambda x : to8888(x)
 convert_texel = convert_rgba16
 if args.fmt == "RGBA32":
+	print("WARNING: RGBA32 is supported, but WILL NOT work!")
+	print("\tFeel free to try to make it work, however, and be sure to PR the changes!")
 	convert_texel = convert_rgba32
 
 img_count = 0
@@ -183,8 +185,8 @@ def handle_mode_0(infile):
 		# print(img.getpixel((width-1,height-1)))
 		for i in range(height):
 			for j in range(width):
-				print(img.getpixel((j, i)))
-				print((get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)))))
+				# print(img.getpixel((j, i)))
+				# print((get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)))))
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n\n"
