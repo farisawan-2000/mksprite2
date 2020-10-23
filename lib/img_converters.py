@@ -10,6 +10,10 @@ def to5551(t):
 			a = 1
 	return ((clamp(r) << 11)) | (clamp(g) << 6) | (clamp(b) << 1) | a
 
+u8 = lambda x : (x & 0xFF)
+
 def to8888(t):
-	return (t[0] << 24) | (t[1] << 16) | (t[2] << 8) | t[3]
+	return (u8(t[0]) << 24) | (u8(t[1]) << 16) | (u8(t[2]) << 8) | u8(t[3])
+
+
 

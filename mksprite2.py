@@ -81,7 +81,7 @@ parser.add_argument(
 parser.add_argument(
     "--format",
     dest="fmt",
-    choices=["RGBA16", "RGAB32"],
+    choices=["RGBA16", "RGBA32"],
     help="Image Format (default RGBA16).",
     default="RGBA16",
 )
@@ -131,6 +131,12 @@ def closest(lst, K):
 
 ls = lambda x : [name for name in os.listdir(args.input_file)]
 
+convert_rgba16 = lambda x : to5551(x)
+convert_rgba32 = lambda x : to8888(x)
+convert_texel = convert_rgba16
+if args.fmt == "RGBA32":
+	convert_texel = convert_rgba32
+
 img_count = 0
 
 def get_image_sym(i, x):
@@ -139,17 +145,26 @@ def get_obj_sym(i):
 	return str(i)+"_obj"
 def get_bg_sym(i):
 	return str(i)+"_bg"
-def get_image_header(i):
-	return "ALIGNED8 u16 "+get_image_sym(i, img_count)+"[] = {"
 
 def get_image_fmt():
-	if args.fmt in ["RGBA16", "RGAB32"]:
+	if args.fmt in ["RGBA16", "RGBA32"]:
 		return "G_IM_FMT_RGBA"
+
 def get_image_size():
 	if args.fmt =="RGBA16":
 		return "G_IM_SIZ_16b"
 	if args.fmt =="RGBA32":
 		return "G_IM_SIZ_32b"
+
+def get_image_ultratype():
+	if args.fmt =="RGBA16":
+		return ["u16", "0x%04X"]
+	if args.fmt =="RGBA32":
+		return ["u32", "0x%08X"]
+
+def get_image_header(i):
+	rt = "ALIGNED8 %s " % get_image_ultratype()[0]
+	return rt + get_image_sym(i, img_count)+"[] = {"
 
 def handle_mode_0(infile):
 	global width
@@ -168,7 +183,9 @@ def handle_mode_0(infile):
 		# print(img.getpixel((width-1,height-1)))
 		for i in range(height):
 			for j in range(width):
-				imstr+= ("0x%04X" % to5551(img.getpixel((j, i))))+", "
+				print(img.getpixel((j, i)))
+				print((get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)))))
+				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n\n"
 	return imstr
@@ -181,7 +198,7 @@ def handle_mode_1(infile):
 		width, height = img.size
 		for i in range(height):
 			for j in range(width):
-				imstr+= ("0x%04X" % to5551(img.getpixel((j, i))))+", "
+				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n\n"
 	return imstr
@@ -197,9 +214,9 @@ def make_textures(count):
 		imstr+="\n".join(["    {",
 		"        G_OBJLT_TXTRBLOCK,                  /* type    */",
 		"        (u64 *)&%s,                         /* image   */" % get_image_sym(args.sprite_name, img_count - count),
-		"        GS_PIX2TMEM(0,      G_IM_SIZ_16b),  /* tmem    */",
-		"        GS_TB_TSIZE(%d*%d,  G_IM_SIZ_16b),  /* tsize   */" % (width, height),
-		"        GS_TB_TLINE(%d,     G_IM_SIZ_16b),  /* tline   */" % width,
+		"        GS_PIX2TMEM(0,      %s),  /* tmem    */" % get_image_size(),
+		"        GS_TB_TSIZE(%d*%d,  %s),  /* tsize   */" % (width, height, get_image_size()),
+		"        GS_TB_TLINE(%d,     %s),  /* tline   */" % (width, get_image_size()),
 		"        0,                                  /* sid     */",
 		"        (u32)&%s,                           /* flag    */" % get_image_sym(args.sprite_name, img_count - count),
 		"        -1                                  /* mask    */",
@@ -208,9 +225,9 @@ def make_textures(count):
 		imstr+="\n".join(["    {",
 		"        G_OBJLT_TXTRBLOCK,                  /* type    */",
 		"        (u64 *)&%s,                         /* image   */" % get_image_sym(args.sprite_name, img_count - count),
-		"        GS_PIX2TMEM(0,      G_IM_SIZ_16b),  /* tmem    */",
-		"        GS_TB_TSIZE(%d*%d,  G_IM_SIZ_16b),  /* tsize   */" % (width, height),
-		"        GS_TB_TLINE(%d,     G_IM_SIZ_16b),  /* tline   */" % width,
+		"        GS_PIX2TMEM(0,      %s),  /* tmem    */" % get_image_size(),
+		"        GS_TB_TSIZE(%d*%d,  %s),  /* tsize   */" % (width, height, get_image_size()),
+		"        GS_TB_TLINE(%d,     %s),  /* tline   */" % (width, get_image_size()),
 		"        0,                                  /* sid     */",
 		"        (u32)&%s,                           /* flag    */" % get_image_sym(args.sprite_name, img_count - count),
 		"        -1                                  /* mask    */",
@@ -244,8 +261,8 @@ def make_bg():
 	"\t0, %d<<2, 0<<2, 240<<2,  /* imageY, imageH, frameY, frameH */" % height,
 	"\t(u64 *)&%s,                /* imagePtr                       */" % get_image_sym(args.sprite_name, 0),
 	"\tG_BGLT_LOADBLOCK,     /* imageLoad */                      ",
-	"\tG_IM_FMT_RGBA,        /* imageFmt                       */",
-	"\tG_IM_SIZ_16b,         /* imageSiz                       */",
+	"\t%s,        /* imageFmt                       */" % get_image_fmt(),
+	"\t%s,         /* imageSiz                       */" % get_image_size(),
 	"\t0,                /* imagePal                       */",
 	"\t0,             /* imageFlip                      */",
 	"\t1 << 10,       /* scale W (s5.10) */",
@@ -278,7 +295,7 @@ def make_s2d_init_dl():
 	"\tgsDPSetBlendColor(0, 0, 0, 0x01),",
 	"\tgsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),",
 	"\tgsSPEndDisplayList(),",
-	])+"\n};"
+	])+"\n};\n\n"
 	return istr
 
 def make_bg_dl():
@@ -344,9 +361,9 @@ def gen_header():
 		imstr += "extern uObjBg %s_bg;\n" % args.sprite_name
 		imstr += "extern Gfx %s_bg_dl[];\n" % args.sprite_name
 	if img_count == 0:
-		imstr += "extern u16 %s_tex_0[];\n" % args.sprite_name
+		imstr += "extern %s %s_tex_0[];\n" % (get_image_ultratype()[0], args.sprite_name)
 	for i in range(img_count):
-		imstr += "extern u16 %s_tex_%d[];\n" % (args.sprite_name, i)
+		imstr += "extern %s %s_tex_%d[];\n" % (get_image_ultratype()[0], args.sprite_name, i)
 	return imstr
 
 
