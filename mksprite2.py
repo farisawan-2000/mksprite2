@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from PIL import Image
 import argparse
+import enum
 import sys, os
 try:
     import argcomplete  # type: ignore
@@ -19,22 +20,26 @@ parser = get_parser()
 if argcomplete:
     argcomplete.autocomplete(parser)
 
+class Mode(enum.Enum):
+	SPRITE = 0
+	ANI_SPRITE = 1
+	BGRECT = 2
 
 
 args = parser.parse_args()
 
 
-mode = 0
+mode = Mode.SPRITE
 
 
 # Make sure paths are correct
 if os.path.isdir(args.input_file):
-    mode = 1
+    mode = Mode.ANI_SPRITE
 elif not os.path.isfile(args.input_file):
     raise Exception("Input file is not a file or directory")
 
 if args.bgrect:
-	mode = 2
+	mode = Mode.BGRECT
 	if not os.path.isfile(args.input_file):
 		raise Exception("Error: Please specify a single image for BG Rect mode")
 
@@ -122,56 +127,6 @@ def handle_mode_1(infile):
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n\n"
-	return imstr
-
-
-def make_textures(count):
-	global img_count
-	imstr = "\n\n"
-	imstr += "uObjTxtr "+args.sprite_name+"_tex%s =\n" % ''.join('[]' if count > 1 else '')
-	if count > 1:
-		imstr += "{\n"
-	if count == 0:
-		imstr+="\n".join(["    {",
-		"        G_OBJLT_TXTRBLOCK,                  /* type    */",
-		"        (u64 *)&%s,                         /* image   */" % get_image_sym(args.sprite_name, img_count - count),
-		"        GS_PIX2TMEM(0,      %s),  /* tmem    */" % get_image_size(),
-		"        GS_TB_TSIZE(%d*%d,  %s),  /* tsize   */" % (width, height, get_image_size()),
-		"        GS_TB_TLINE(%d,     %s),  /* tline   */" % (width, get_image_size()),
-		"        0,                                  /* sid     */",
-		"        (u32)&%s,                           /* flag    */" % get_image_sym(args.sprite_name, img_count - count),
-		"        -1                                  /* mask    */",
-		"    };\n"])
-	while count > 0:
-		imstr+="\n".join(["    {",
-		"        G_OBJLT_TXTRBLOCK,                  /* type    */",
-		"        (u64 *)&%s,                         /* image   */" % get_image_sym(args.sprite_name, img_count - count),
-		"        GS_PIX2TMEM(0,      %s),  /* tmem    */" % get_image_size(),
-		"        GS_TB_TSIZE(%d*%d,  %s),  /* tsize   */" % (width, height, get_image_size()),
-		"        GS_TB_TLINE(%d,     %s),  /* tline   */" % (width, get_image_size()),
-		"        0,                                  /* sid     */",
-		"        (u32)&%s,                           /* flag    */" % get_image_sym(args.sprite_name, img_count - count),
-		"        -1                                  /* mask    */",
-		"    }%s\n" % ''.join([',' if count > 1 else ',\n};\n'])])
-		count -= 1
-
-	# if count > 1:
-	# 	imstr += "};\n"
-	return imstr
-
-def make_obj():
-	imstr = "\n\n"
-	imstr+="uObjSprite "+args.sprite_name+"_obj =\n"
-	imstr+="\n".join(["{",
-	"\t0<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, paddingX */\n" % width,
-	"\t0<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, paddingY */" % height,
-	"\tGS_PIX2TMEM(%d, %s),    /* imageStride */" % (width, get_image_size()),
-	"\tGS_PIX2TMEM(0, %s),     /* imageAdrs   */" % get_image_size(),
-	"\t%s,                    /* imageFmt    */" % get_image_fmt(),
-	"\t%s,                     /* imageSiz    */" % get_image_size(),
-	"\t0,                                /* imagePal    */",
-	"\t0                                 /* imageFlags  */",
-	"};\n"])
 	return imstr
 
 def make_bg():
@@ -265,7 +220,7 @@ def make_ani_sprite_dl():
 	imstr+="\n};"
 	return imstr
 
-def gen_header():
+def gen_header(args):
 	imstr = ""
 	imstr += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	if args.init_dl:
@@ -288,19 +243,20 @@ def gen_header():
 	return imstr
 
 
+from lib.gs2dex import *
 
 output_buffer = ""
-if mode == 0:
+if mode == Mode.SPRITE:
 	output_buffer += handle_mode_0(args.input_file)
 	print(width, height)
-	output_buffer += make_textures(0)
+	output_buffer += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()
 	output_buffer += make_init_matrix()
-	output_buffer += make_obj()
+	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 	if args.create_dl:
 		output_buffer += make_sprite_dl(args, img_count)
-elif mode == 1:
+elif mode == Mode.ANI_SPRITE:
 	print("Warning: When using animated sprites with SM64 Decomp, due to space restraints,")
 	print("\tyou might have to split up the output file.\n")
 	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
@@ -310,15 +266,15 @@ elif mode == 1:
 		img_count+=1
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()
-	output_buffer += make_textures(len(ls(args.input_file)))
+	output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 	output_buffer += make_init_matrix()
-	output_buffer += make_obj()
+	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 	if args.create_dl:
 		if img_count > 0:
 			output_buffer += make_ani_sprite_dl()
 		else:
 			output_buffer += make_sprite_dl(args, img_count)
-elif mode == 2:
+elif mode == Mode.BGRECT:
 	output_buffer += handle_mode_0(args.input_file)
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()
@@ -329,7 +285,7 @@ elif mode == 2:
 
 if args.header_file:
 	with open(args.header_file, "w+") as f:
-		f.write(gen_header())
+		f.write(gen_header(args))
 
 with open(args.output_file, "w+") as f:
 	f.write(output_buffer)
