@@ -6,7 +6,7 @@ def to5551(t):
 	b = (t[2] / 255) * 31
 	a = 1
 	if len(t) == 4:
-		if t[3] == 0:
+		if t[3] <= 50:
 			a = 0
 	return ((clamp(r) << 11)) | (clamp(g) << 6) | (clamp(b) << 1) | a
 
