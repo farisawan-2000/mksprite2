@@ -105,7 +105,6 @@ class UObjAniTxtr(UObjTxtr):
 		s_str += "};\n"
 		return s_str
 
-
 class UObjSprite(S2dType):
 	def __init__(self, w, h, fmt, bitsize, name):
 		self.data_type = "uObjSprite"
@@ -121,7 +120,6 @@ class UObjSprite(S2dType):
 	def get_img_addr(self):
 		return "\t"+Gs2dex.gs_pix2tmem(0, self.tex_bitsize) + " /* imageAdrs */\n"
 
-
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_obj",'=','{'])+'\n'
 		s_str += Gs2dex.sprite_dim(self.width, self.height)
@@ -131,5 +129,29 @@ class UObjSprite(S2dType):
 		s_str += self.get_img_siz()
 		s_str += self.get_img_pal()
 		s_str += self.get_img_flags()
+		s_str += "};\n"
+		return s_str
+
+
+class UObjMtx:
+	sx = 1;
+	sy = 1;
+	x = 0;
+	y = 0;
+	name = ""
+	def __init__(self, sx, sy, x, y, name):
+		self.data_type = "uObjMtx"
+		self.sx = sx;
+		self.sy = sy;
+		self.x = x;
+		self.y = y;
+		self.name = name
+
+	def __str__(self):
+		s_str = ' '.join([self.data_type, self.name + "_mtx",'=','{'])+'\n'
+		s_str += "\t0x10000,  0,              /* A,B */\n"
+		s_str += "\t0,        0x10000,        /* C,D */\n"
+		s_str += "\t%d,        %d,            /* X,Y */\n" % (self.x, self.y)
+		s_str += "\t%d<<10,    %d<<10           /* BaseScaleX, BaseScaleY */\n" % (self.sx, self.sy)
 		s_str += "};\n"
 		return s_str

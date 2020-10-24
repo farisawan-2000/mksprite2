@@ -4,18 +4,17 @@ import argparse
 import enum
 import sys, os
 try:
-    import argcomplete  # type: ignore
+	import argcomplete  # type: ignore
 except ModuleNotFoundError:
     argcomplete = None
 
 # My lib/ functions
 from lib.img_converters import to5551, to8888
 from lib.parser import get_parser
-
+from lib.gs2dex import *
+from lib.dl_handler import *
 
 parser = get_parser()
-
-
 
 if argcomplete:
     argcomplete.autocomplete(parser)
@@ -28,10 +27,7 @@ class Mode(enum.Enum):
 
 args = parser.parse_args()
 
-
 mode = Mode.SPRITE
-
-
 # Make sure paths are correct
 if os.path.isdir(args.input_file):
     mode = Mode.ANI_SPRITE
@@ -51,7 +47,6 @@ valid_loadblock_widths = [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48, 64, 72, 76, 
 
 def closest(lst, K):
     return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))] 
-
 
 ls = lambda x : [name for name in os.listdir(args.input_file)]
 
@@ -99,18 +94,8 @@ def handle_mode_0(infile):
 	imstr+=get_image_header(args.sprite_name)
 	with Image.open(infile) as img:
 		width, height = img.size
-		# if width not in valid_loadblock_widths:
-		# 	x = input("Warning: image doesn't have a valie LoadBlock width. Resize? [Y/N]")
-		# 	if x.upper() in ["Y","N"]:
-		# 		if x.upper() == "Y":
-		# 			img = img.thumbnail()
-		# 		else:
-		# print(width,height)
-		# print(img.getpixel((width-1,height-1)))
 		for i in range(height):
 			for j in range(width):
-				# print(img.getpixel((j, i)))
-				# print((get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)))))
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n\n"
@@ -148,78 +133,6 @@ def make_bg():
 	])
 	return imstr+"\n\n"
 
-def make_init_matrix():
-	return '\n'.join([
-		"uObjMtx %s_mtx =" % args.sprite_name,
-		"{",
-		"	0x10000,  0,              /* A,B */",
-		"	0,        0x10000,        /* C,D */",
-		"	50,        50,            /* X,Y */",
-		"	1<<10,    1<<10           /* BaseScaleX, BaseScaleY */",
-		"};"
-		])
-
-def make_s2d_init_dl():
-	istr = "Gfx s2d_init_dl[] = {\n"+\
-	'\n'.join([
-	"\tgsDPPipeSync(),",
-	"\tgsDPSetTexturePersp(G_TP_NONE),",
-	"\tgsDPSetTextureLOD(G_TL_TILE),",
-	"\tgsDPSetTextureLUT(G_TT_NONE),",
-	"\tgsDPSetTextureConvert(G_TC_FILT),",
-	"\tgsDPSetAlphaCompare(G_AC_THRESHOLD),",
-	"\tgsDPSetBlendColor(0, 0, 0, 0x01),",
-	"\tgsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),",
-	"\tgsSPEndDisplayList(),",
-	])+"\n};\n\n"
-	return istr
-
-def make_bg_dl():
-	imstr = "Gfx %s_bg_dl[] = {\n" % args.sprite_name
-	imstr += '\n'.join([
-	"\tgsDPPipeSync(),",
-	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
-	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
-	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
-	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
-	"\tgsSPBgRect1Cyc(&%s_bg)," % args.sprite_name,
-	"\tgsSPEndDisplayList(),",
-	])
-	imstr+="\n};"
-	return imstr
-
-def make_sprite_dl(args, icount):
-	imstr = "Gfx %s_sprite_dl[] = {\n" % args.sprite_name
-	imstr += '\n'.join([
-	"\tgsDPPipeSync(),",
-	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
-	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
-	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
-	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
-	"\tgsSPObjLoadTxtr(&%s_tex%s)," % (args.sprite_name,"[0]" if icount > 0 else ""),
-	"\tgsSPObjMatrix(&%s_mtx)," % args.sprite_name,
-	"\tgsSPObjSprite(&%s_obj)," % args.sprite_name,
-	"\tgsSPEndDisplayList(),",
-	])
-	imstr+="\n};"
-	return imstr
-
-
-def make_ani_sprite_dl():
-	imstr = "void call_%s_sprite_dl(int idx) {\n" % args.sprite_name
-	imstr += '\n'.join([
-	"\tgDPPipeSync(%s++);" % args.dl_head,
-	''.join(["\tgSPDisplayList(%s++, s2d_init_dl);" % args.dl_head]) if args.init_dl else "",
-	"\tgDPSetCycleType(%s++, G_CYC_1CYCLE);" % args.dl_head,
-	"\tgDPSetRenderMode(%s++, G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2);" % args.dl_head,
-	"\tgSPObjRenderMode(%s++, G_OBJRM_XLU | G_OBJRM_BILERP);" % args.dl_head,
-	"\tgSPObjLoadTxtr(%s++, &%s_tex[idx]);" % (args.dl_head, args.sprite_name),
-	"\tgSPObjMatrix(%s++, &%s_mtx);" % (args.dl_head, args.sprite_name),
-	"\tgSPObjSprite(%s++, &%s_obj);" % (args.dl_head, args.sprite_name),
-	])
-	imstr+="\n};"
-	return imstr
-
 def gen_header(args):
 	imstr = ""
 	imstr += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
@@ -243,7 +156,7 @@ def gen_header(args):
 	return imstr
 
 
-from lib.gs2dex import *
+
 
 output_buffer = ""
 if mode == Mode.SPRITE:
@@ -252,7 +165,7 @@ if mode == Mode.SPRITE:
 	output_buffer += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()
-	output_buffer += make_init_matrix()
+	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 	if args.create_dl:
 		output_buffer += make_sprite_dl(args, img_count)
@@ -260,18 +173,18 @@ elif mode == Mode.ANI_SPRITE:
 	print("Warning: When using animated sprites with SM64 Decomp, due to space restraints,")
 	print("\tyou might have to split up the output file.\n")
 	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
-	for i in ls(args.input_file):
-		output_buffer += handle_mode_1(i)
+	for i in range(len(ls(args.input_file))):
+		output_buffer += handle_mode_1(str(i)+".png")
 		output_buffer += "\n\n"
 		img_count+=1
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()
 	output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
-	output_buffer += make_init_matrix()
+	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 	if args.create_dl:
 		if img_count > 0:
-			output_buffer += make_ani_sprite_dl()
+			output_buffer += make_ani_sprite_dl(args)
 		else:
 			output_buffer += make_sprite_dl(args, img_count)
 elif mode == Mode.BGRECT:
@@ -280,7 +193,7 @@ elif mode == Mode.BGRECT:
 		output_buffer += make_s2d_init_dl()
 	output_buffer += make_bg()
 	if args.create_dl:
-		output_buffer += make_bg_dl()
+		output_buffer += make_bg_dl(args)
 
 
 if args.header_file:
