@@ -114,8 +114,11 @@ class UObjSprite(S2dType):
 		self.tex_bitsize = bitsize
 		self.name = name
 	
-	def get_img_stride(self):
+	def get_img_stride_16(self):
 		return "\t"+Gs2dex.gs_pix2tmem(self.width, self.tex_bitsize) + " /* imageStride */\n"
+
+	def get_img_stride_32(self):
+		return "\t"+Gs2dex.gs_pix2tmem(self.width / 2, self.tex_bitsize) + " /* imageStride */\n"
 
 	def get_img_addr(self):
 		return "\t"+Gs2dex.gs_pix2tmem(0, self.tex_bitsize) + " /* imageAdrs */\n"
@@ -123,7 +126,10 @@ class UObjSprite(S2dType):
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_obj",'=','{'])+'\n'
 		s_str += Gs2dex.sprite_dim(self.width, self.height)
-		s_str += self.get_img_stride()
+		if self.tex_bitsize == "32":
+			s_str += self.get_img_stride_32()
+		else:
+			s_str += self.get_img_stride_16()
 		s_str += self.get_img_addr()
 		s_str += self.get_img_fmt()
 		s_str += self.get_img_siz()

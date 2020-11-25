@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from PIL import Image
+from PIL import Image, GifImagePlugin
 import argparse
 import enum
 import sys, os
@@ -23,6 +23,7 @@ class Mode(enum.Enum):
 	SPRITE = 0
 	ANI_SPRITE = 1
 	BGRECT = 2
+	GIF = 3
 
 
 args = parser.parse_args()
@@ -31,6 +32,8 @@ mode = Mode.SPRITE
 # Make sure paths are correct
 if os.path.isdir(args.input_file):
     mode = Mode.ANI_SPRITE
+elif '.gif' in args.input_file:
+	mode = Mode.GIF
 elif not os.path.isfile(args.input_file):
     raise Exception("Input file is not a file or directory")
 
@@ -48,7 +51,7 @@ valid_loadblock_widths = [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48, 64, 72, 76, 
 def closest(lst, K):
     return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))] 
 
-ls = lambda x : [name for name in os.listdir(args.input_file)]
+ls = lambda x : [name for name in os.listdir(x)]
 
 convert_rgba16 = lambda x : to5551(x)
 convert_rgba32 = lambda x : to8888(x)
@@ -105,7 +108,7 @@ def handle_mode_1(infile):
 	global width
 	global height
 	imstr=get_image_header(args.sprite_name)
-	with Image.open(args.input_file+infile) as img:
+	with Image.open(infile) as img:
 		width, height = img.size
 		for i in range(height):
 			for j in range(width):
@@ -113,6 +116,22 @@ def handle_mode_1(infile):
 
 	imstr+= "};\n\n"
 	return imstr
+
+def setup_mode_gif(infile):
+	global width
+	global height
+	# imstr=get_image_header(args.sprite_name)
+	with Image.open(infile) as img:
+		print(img.is_animated)
+		print(img.n_frames)
+		width, height = img.size
+		for frame in range(0, img.n_frames):
+			img.seek(frame)
+			img.save("./tmp/"+str(frame)+".png")
+
+	# imstr+= "};\n\n"
+	# return imstr
+
 
 def make_bg():
 	imstr = '\n\n'
@@ -156,7 +175,12 @@ def gen_header(args):
 	return imstr
 
 
+def print_warning(mode):
+	print("Warning: When using "+mode+" with SM64 Decomp, due to space restraints,")
+	print("\tyou might have to split up the output file.\n")
 
+def align_tex(n):
+	return "u32 "+n+"_align = 0;\n"
 
 output_buffer = ""
 if mode == Mode.SPRITE:
@@ -170,11 +194,10 @@ if mode == Mode.SPRITE:
 	if args.create_dl:
 		output_buffer += make_sprite_dl(args, img_count)
 elif mode == Mode.ANI_SPRITE:
-	print("Warning: When using animated sprites with SM64 Decomp, due to space restraints,")
-	print("\tyou might have to split up the output file.\n")
+	print_warning("animated sprites")
 	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	for i in range(len(ls(args.input_file))):
-		output_buffer += handle_mode_1(str(i)+".png")
+		output_buffer += handle_mode_1(args.input_file+str(i)+".png")
 		output_buffer += "\n\n"
 		img_count+=1
 	if args.init_dl:
@@ -194,6 +217,26 @@ elif mode == Mode.BGRECT:
 	output_buffer += make_bg()
 	if args.create_dl:
 		output_buffer += make_bg_dl(args)
+elif mode == Mode.GIF:
+	print_warning("gifs")
+	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
+	setup_mode_gif(args.input_file)
+	# output_buffer += handle_mode_1("./tmp/")
+	for i in range(len(ls('./tmp/'))):
+		output_buffer += handle_mode_1("./tmp/"+str(i)+".png")
+		output_buffer += "\n\n"
+		img_count+=1
+	if args.init_dl:
+		output_buffer += make_s2d_init_dl()
+	output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
+	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
+	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
+	if args.create_dl:
+		if img_count > 0:
+			output_buffer += make_ani_sprite_dl(args)
+		else:
+			output_buffer += make_sprite_dl(args, img_count)
+
 
 
 if args.header_file:
