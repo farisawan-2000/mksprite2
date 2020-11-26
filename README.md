@@ -12,6 +12,8 @@
 
 ## Gotchas and Things To Watch Out For
 - When using the tool with the 2.0L version of SM64 decomp, there are a ton of space limitations with unknown causes. You will likely have to split the resulting output file into a file with just textures and a file with just the sprite-related data.
+- RGBA32 textures do not work (but feel free to try to get them to work and PR the changes)
+- The GNU GPLv3 License
 
 ### Full Options List
 ```
