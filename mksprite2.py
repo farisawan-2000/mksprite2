@@ -9,7 +9,7 @@ except ModuleNotFoundError:
     argcomplete = None
 
 # My lib/ functions
-from lib.img_converters import to5551, to8888
+from lib.img_converters import to5551, to8888, toia8
 from lib.parser import get_parser
 from lib.gs2dex import *
 from lib.dl_handler import *
@@ -55,11 +55,14 @@ ls = lambda x : [name for name in os.listdir(x)]
 
 convert_rgba16 = lambda x : to5551(x)
 convert_rgba32 = lambda x : to8888(x)
+convert_ia8 = lambda x : toia8(x)
 convert_texel = convert_rgba16
 if args.fmt == "RGBA32":
 	print("WARNING: RGBA32 is supported, but WILL NOT work!")
 	print("\tFeel free to try to make it work, however, and be sure to PR the changes!")
 	convert_texel = convert_rgba32
+if args.fmt in ["IA8"]:
+	convert_texel = convert_ia8
 
 img_count = 0
 
@@ -73,18 +76,24 @@ def get_bg_sym(i):
 def get_image_fmt():
 	if args.fmt in ["RGBA16", "RGBA32"]:
 		return "G_IM_FMT_RGBA"
+	if args.fmt in ["IA16", "IA8", "IA4"]:
+		return "G_IM_FMT_IA"
 
 def get_image_size():
 	if args.fmt =="RGBA16":
 		return "G_IM_SIZ_16b"
 	if args.fmt =="RGBA32":
 		return "G_IM_SIZ_32b"
+	if args.fmt =="IA8":
+		return "G_IM_SIZ_8b"
 
 def get_image_ultratype():
 	if args.fmt =="RGBA16":
 		return ["u16", "0x%04X"]
 	if args.fmt =="RGBA32":
 		return ["u32", "0x%08X"]
+	if args.fmt == "IA8":
+		return ["u8", "0x%02X"]
 
 def get_image_header(i):
 	rt = "ALIGNED8 %s " % get_image_ultratype()[0]

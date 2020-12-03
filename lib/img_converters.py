@@ -15,5 +15,9 @@ u8 = lambda x : (x & 0xFF)
 def to8888(t):
 	return (u8(t[0]) << 24) | (u8(t[1]) << 16) | (u8(t[2]) << 8) | u8(t[3])
 
+u4 = lambda x : (int(x) & 0xF)
+avg = lambda x : ((x[0] + x[1] + x[2]) / 3)
 
+def toia8(t):
+	return ((u4(avg(t) / 16) << 4) | (u4(t[3] / 16)))
 
