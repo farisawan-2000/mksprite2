@@ -34,6 +34,8 @@ if os.path.isdir(args.input_file):
     mode = Mode.ANI_SPRITE
 elif '.gif' in args.input_file:
 	mode = Mode.GIF
+	print("ERROR: GIF support not implemented")
+	exit(1)
 elif not os.path.isfile(args.input_file):
     raise Exception("Input file is not a file or directory")
 
@@ -99,6 +101,9 @@ def get_image_header(i):
 	rt = "ALIGNED8 %s " % get_image_ultratype()[0]
 	return rt + get_image_sym(i, img_count)+"[] = {"
 
+def align_tex(n, x):
+	return "u32 "+n+"_align_"+str(x)+" = {gsSPEndDisplayList()};\n"
+
 def handle_mode_0(infile):
 	global width
 	global height
@@ -110,7 +115,8 @@ def handle_mode_0(infile):
 			for j in range(width):
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
-	imstr+= "};\n\n"
+	imstr+= "};\n"
+	imstr += align_tex(args.sprite_name, 0) + "\n"
 	return imstr
 
 def handle_mode_1(infile):
@@ -123,7 +129,7 @@ def handle_mode_1(infile):
 			for j in range(width):
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
-	imstr+= "};\n\n"
+	imstr+= "};\n"
 	return imstr
 
 def setup_mode_gif(infile):
@@ -185,11 +191,10 @@ def gen_header(args):
 
 
 def print_warning(mode):
-	print("Warning: When using "+mode+" with SM64 Decomp, due to space restraints,")
-	print("\tyou might have to split up the output file.\n")
+	print("Note: When using "+mode+" with SM64 Decomp, due to space restraints,")
+	print("\tit's best to include your sprites in an assets file.\n")
 
-def align_tex(n):
-	return "u32 "+n+"_align = 0;\n"
+
 
 output_buffer = ""
 if mode == Mode.SPRITE:
@@ -207,7 +212,9 @@ elif mode == Mode.ANI_SPRITE:
 	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	for i in range(len(ls(args.input_file))):
 		output_buffer += handle_mode_1(args.input_file+str(i)+".png")
-		output_buffer += "\n\n"
+		# output_buffer += "\n"
+		output_buffer += align_tex(args.sprite_name, 0)
+		output_buffer += "\n"
 		img_count+=1
 	if args.init_dl:
 		output_buffer += make_s2d_init_dl()

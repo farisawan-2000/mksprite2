@@ -19,5 +19,10 @@ u4 = lambda x : (int(x) & 0xF)
 avg = lambda x : ((x[0] + x[1] + x[2]) / 3)
 
 def toia8(t):
-	return ((u4(avg(t) / 16) << 4) | (u4(t[3] / 16)))
+	if len(t) == 4:
+		return ((u4(avg(t) / 16) << 4) | (u4(t[3] / 16)))
+	elif len(t) == 3:
+		return ((u4(avg(t) / 16) << 4) | (u4(0xFF / 16)))
+	else:
+		return ((u4(t[0] / 16) << 4) | (u4(0xFF / 16)))
 
