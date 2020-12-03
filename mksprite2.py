@@ -102,7 +102,7 @@ def get_image_header(i):
 	return rt + get_image_sym(i, img_count)+"[] = {"
 
 def align_tex(n, x):
-	return "u32 "+n+"_align_"+str(x)+" = {gsSPEndDisplayList()};\n"
+	return "Gfx "+n+"_align_"+str(x)+"[] = {gsSPEndDisplayList()};\n"
 
 def handle_mode_0(infile):
 	global width
