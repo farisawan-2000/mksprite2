@@ -9,7 +9,7 @@ except ModuleNotFoundError:
     argcomplete = None
 
 # My lib/ functions
-from lib.img_converters import to5551, to8888, toia8
+from lib.img_converters import to5551, to8888, toia8, toci4
 from lib.parser import get_parser
 from lib.gs2dex import *
 from lib.dl_handler import *
@@ -58,13 +58,17 @@ ls = lambda x : [name for name in os.listdir(x)]
 convert_rgba16 = lambda x : to5551(x)
 convert_rgba32 = lambda x : to8888(x)
 convert_ia8 = lambda x : toia8(x)
+convert_ci4 = lambda x, y, z : toci4(x, y, z)
 convert_texel = convert_rgba16
+
 if args.fmt == "RGBA32":
 	print("WARNING: RGBA32 is supported, but WILL NOT work!")
 	print("\tFeel free to try to make it work, however, and be sure to PR the changes!")
 	convert_texel = convert_rgba32
 if args.fmt in ["IA8"]:
 	convert_texel = convert_ia8
+if args.fmt in ["CI4"]:
+	convert_texel = convert_ci4
 
 img_count = 0
 
@@ -80,14 +84,18 @@ def get_image_fmt():
 		return "G_IM_FMT_RGBA"
 	if args.fmt in ["IA16", "IA8", "IA4"]:
 		return "G_IM_FMT_IA"
+	if args.fmt in ["CI8", "CI4"]:
+		return "G_IM_FMT_CI"
 
 def get_image_size():
-	if args.fmt =="RGBA16":
-		return "G_IM_SIZ_16b"
-	if args.fmt =="RGBA32":
+	if "32" in args.fmt:
 		return "G_IM_SIZ_32b"
-	if args.fmt =="IA8":
+	if "16" in args.fmt:
+		return "G_IM_SIZ_16b"
+	if "8" in args.fmt:
 		return "G_IM_SIZ_8b"
+	if "4" in args.fmt:
+		return "G_IM_SIZ_4b"
 
 def get_image_ultratype():
 	if args.fmt =="RGBA16":
@@ -95,6 +103,8 @@ def get_image_ultratype():
 	if args.fmt =="RGBA32":
 		return ["u32", "0x%08X"]
 	if args.fmt == "IA8":
+		return ["u8", "0x%02X"]
+	if args.fmt == "CI4":
 		return ["u8", "0x%02X"]
 
 def get_image_header(i):
@@ -104,7 +114,7 @@ def get_image_header(i):
 def align_tex(n, x):
 	return "Gfx "+n+"_align_"+str(x)+"[] = {gsSPEndDisplayList()};\n"
 
-def handle_mode_0(infile):
+def handle_static_sprite(infile):
 	global width
 	global height
 	imstr = "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
@@ -119,7 +129,7 @@ def handle_mode_0(infile):
 	imstr += align_tex(args.sprite_name, 0) + "\n"
 	return imstr
 
-def handle_mode_1(infile):
+def handle_animated_sprite(infile):
 	global width
 	global height
 	imstr=get_image_header(args.sprite_name)
@@ -131,6 +141,8 @@ def handle_mode_1(infile):
 
 	imstr+= "};\n"
 	return imstr
+
+
 
 def setup_mode_gif(infile):
 	global width
@@ -197,61 +209,68 @@ def print_warning(mode):
 
 
 output_buffer = ""
-if mode == Mode.SPRITE:
-	output_buffer += handle_mode_0(args.input_file)
-	print(width, height)
-	output_buffer += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
-	if args.init_dl:
-		output_buffer += make_s2d_init_dl()
-	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
-	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
-	if args.create_dl:
-		output_buffer += make_sprite_dl(args, img_count)
-elif mode == Mode.ANI_SPRITE:
-	print_warning("animated sprites")
-	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
-	for i in range(len(ls(args.input_file))):
-		output_buffer += handle_mode_1(args.input_file+str(i)+".png")
-		# output_buffer += "\n"
-		output_buffer += align_tex(args.sprite_name, 0)
-		output_buffer += "\n"
-		img_count+=1
-	if args.init_dl:
-		output_buffer += make_s2d_init_dl()
-	output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
-	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
-	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
-	if args.create_dl:
-		if img_count > 0:
-			output_buffer += make_ani_sprite_dl(args)
+from lib.ci4 import make_ci4_sprite
+if args.fmt == "CI4":
+	output_buffer += make_ci4_sprite(args)
+else:
+	if mode == Mode.SPRITE:
+		if args.fmt == "CI4":
+			output_buffer += handle_ci4(args.input_file)
 		else:
+			output_buffer += handle_static_sprite(args.input_file)
+		print(width, height)
+		output_buffer += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
+		if args.init_dl:
+			output_buffer += make_s2d_init_dl()
+		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
+		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
+		if args.create_dl:
 			output_buffer += make_sprite_dl(args, img_count)
-elif mode == Mode.BGRECT:
-	output_buffer += handle_mode_0(args.input_file)
-	if args.init_dl:
-		output_buffer += make_s2d_init_dl()
-	output_buffer += make_bg()
-	if args.create_dl:
-		output_buffer += make_bg_dl(args)
-elif mode == Mode.GIF:
-	print_warning("gifs")
-	output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
-	setup_mode_gif(args.input_file)
-	# output_buffer += handle_mode_1("./tmp/")
-	for i in range(len(ls('./tmp/'))):
-		output_buffer += handle_mode_1("./tmp/"+str(i)+".png")
-		output_buffer += "\n\n"
-		img_count+=1
-	if args.init_dl:
-		output_buffer += make_s2d_init_dl()
-	output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
-	output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
-	output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
-	if args.create_dl:
-		if img_count > 0:
-			output_buffer += make_ani_sprite_dl(args)
-		else:
-			output_buffer += make_sprite_dl(args, img_count)
+	elif mode == Mode.ANI_SPRITE:
+		print_warning("animated sprites")
+		output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
+		for i in range(len(ls(args.input_file))):
+			output_buffer += handle_animated_sprite(args.input_file+str(i)+".png")
+			# output_buffer += "\n"
+			output_buffer += align_tex(args.sprite_name, 0)
+			output_buffer += "\n"
+			img_count+=1
+		if args.init_dl:
+			output_buffer += make_s2d_init_dl()
+		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
+		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
+		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
+		if args.create_dl:
+			if img_count > 0:
+				output_buffer += make_ani_sprite_dl(args)
+			else:
+				output_buffer += make_sprite_dl(args, img_count)
+	elif mode == Mode.BGRECT:
+		output_buffer += handle_static_sprite(args.input_file)
+		if args.init_dl:
+			output_buffer += make_s2d_init_dl()
+		output_buffer += make_bg()
+		if args.create_dl:
+			output_buffer += make_bg_dl(args)
+	elif mode == Mode.GIF:
+		print_warning("gifs")
+		output_buffer += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
+		setup_mode_gif(args.input_file)
+		# output_buffer += handle_animated_sprite("./tmp/")
+		for i in range(len(ls('./tmp/'))):
+			output_buffer += handle_animated_sprite("./tmp/"+str(i)+".png")
+			output_buffer += "\n\n"
+			img_count+=1
+		if args.init_dl:
+			output_buffer += make_s2d_init_dl()
+		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
+		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
+		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
+		if args.create_dl:
+			if img_count > 0:
+				output_buffer += make_ani_sprite_dl(args)
+			else:
+				output_buffer += make_sprite_dl(args, img_count)
 
 
 

@@ -71,7 +71,7 @@ def get_parser():
     parser.add_argument(
         "--format",
         dest="fmt",
-        choices=["RGBA16", "RGBA32", "IA8"],
+        choices=["RGBA16", "RGBA32", "IA8", "CI4"],
         help="Image Format (default RGBA16).",
         default="RGBA16",
     )

@@ -26,3 +26,9 @@ def toia8(t):
 	else:
 		return ((u4(t[0] / 16) << 4) | (u4(0xFF / 16)))
 
+def toci4(t1, t2, pal_list):
+	if t1 not in pal_list:
+		pal_list.append(t1)
+	if t2 not in pal_list:
+		pal_list.append(t2)
+	return (u4(pal_list.index(t1)) << 4 | u4(pal_list.index(t2)))

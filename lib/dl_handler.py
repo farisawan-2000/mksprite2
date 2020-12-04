@@ -45,6 +45,25 @@ def make_sprite_dl(args, icount):
 	imstr+="\n};"
 	return imstr
 
+def make_sprite_dl_ci(args, icount):
+	imstr = "Gfx %s_sprite_dl[] = {\n" % args.sprite_name
+	imstr += '\n'.join([
+	"\tgsDPPipeSync(),",
+	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
+	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
+	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
+	"\tgsDPSetTextureLUT(G_TT_RGBA16),"
+	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
+	"\tgsSPObjLoadTxtr(&%s_tex%s)," % (args.sprite_name,"[0]" if icount > 0 else ""),
+	"\tgsSPObjLoadTxtr(&%s_pal_TLUT)," % args.sprite_name,
+	"\tgsSPObjMatrix(&%s_mtx)," % args.sprite_name,
+	"\tgsSPObjSprite(&%s_obj)," % args.sprite_name,
+	"\tgsSPEndDisplayList(),",
+	])
+	imstr+="\n};"
+	return imstr
+
+
 def make_ani_sprite_dl(args):
 	imstr = "void call_%s_sprite_dl(int idx) {\n" % args.sprite_name
 	imstr += '\n'.join([

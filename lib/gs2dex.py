@@ -11,6 +11,10 @@ class Gs2dex:
 		return ret
 	def sprite_dim(w, h):
 		return Gs2dex.sprite_dim_pos(0, 0, w, h)
+	def gs_pal_head(o):
+		return "GS_PAL_HEAD(%s), /* phead */\n" % o
+	def gs_pal_num(o):
+		return "GS_PAL_NUM(%s), /* pnum */\n" % o
 
 class S2dType:
 	width = 0
@@ -33,7 +37,7 @@ class S2dType:
 class UObjTxtr(S2dType):
 	load_type = "G_OBJLT_TXTRBLOCK"
 	def __init__(self, w, h, fmt, bitsize, tp, name):
-		self.data_type = "uObjTxtr"
+		self.data_type = "uObjTxtrBlock_t"
 		self.width = w
 		self.height = h
 		self.tex_format = fmt
@@ -63,6 +67,39 @@ class UObjTxtr(S2dType):
 		s_str += self.get_img_addr()
 		s_str += "\t"+Gs2dex.gs_tb_tsize(self.width, self.height, self.tex_bitsize)
 		s_str += "\t"+Gs2dex.gs_tb_tline(self.width, self.tex_bitsize)
+		s_str += "\t0, /* sid */\n"
+		s_str += self.get_flag()
+		s_str += "\t0xFFFFFFFF, /* mask */\n"
+		s_str += "};\n"
+		return s_str
+
+class UObjTLUT(UObjTxtr):
+	load_type = "G_OBJLT_TLUT"
+	def __init__(self, tp, name, psize):
+		self.data_type = "uObjTxtrTLUT_t"
+		self.tex_pointer = tp
+		self.name = name
+		self.psize = psize
+
+	def get_load_type(self):
+		return "\t"+self.load_type+", \n"
+
+	def get_img_ptr(self, typ):
+		return "\t(%s) &%s," % (typ, self.tex_pointer)
+
+	def get_image(self):
+		return self.get_img_ptr("u64 *")+" /* image */\n"
+
+	def get_flag(self):
+		return self.get_img_ptr("u32")+" /* flag */\n"
+
+	def __str__(self):
+		s_str =  ' '.join([self.data_type, self.name + "_TLUT",'=','{'])+'\n'
+		s_str += self.get_load_type()
+		s_str += self.get_image()
+		s_str += "\t"+Gs2dex.gs_pal_head(0)
+		s_str += "\t"+Gs2dex.gs_pal_num(self.psize + 1)
+		s_str += "\t0,\n"
 		s_str += "\t0, /* sid */\n"
 		s_str += self.get_flag()
 		s_str += "\t0xFFFFFFFF, /* mask */\n"
