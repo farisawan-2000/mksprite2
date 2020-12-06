@@ -189,7 +189,7 @@ def gen_header(args):
 		imstr += "extern uObjMtx %s_mtx;\n" % args.sprite_name
 		imstr += "extern uObjSprite %s_obj;\n" % args.sprite_name
 		if img_count > 0:
-			imstr += "extern void call_%s_sprite_dl(int idx);\n" % args.sprite_name
+			imstr += "extern void call_%s_sprite_dl(int idx, int x, int y, uObjMtx *buffer, int buf_idx);\n" % args.sprite_name
 		else:
 			imstr += "extern Gfx %s_sprite_dl[];\n" % args.sprite_name
 	else:
@@ -232,7 +232,7 @@ else:
 		for i in range(len(ls(args.input_file))):
 			output_buffer += handle_animated_sprite(args.input_file+str(i)+".png")
 			# output_buffer += "\n"
-			output_buffer += align_tex(args.sprite_name, 0)
+			output_buffer += align_tex(args.sprite_name, i)
 			output_buffer += "\n"
 			img_count+=1
 		if args.init_dl:
