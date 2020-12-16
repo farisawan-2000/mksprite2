@@ -2,7 +2,7 @@
 ### Create sprite and background objects for use with S2DEX microcode projects on Nintendo 64
 
 ## Usage
-`./mksprite.py -h` for full help
+`./mksprite2.py -h` for full help
 
 `-i FILE_NAME`: **Input file/Folder** - Specify an image for a single sprite (Must be a .png file), or a folder for animated sprites. All frames of animated sprites must use the naming scheme `X.png`, where X is the frame number
 
