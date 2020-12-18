@@ -77,10 +77,11 @@ def get_parser():
     )
 
     parser.add_argument(
-        "-p"
-        "--palette",
-        dest="pal_consolidate",
-        help="(CI4 Only) Assigns only one palette to all CI4 textures in animated mode.",
+        "-p",
+        "--palette-split",
+        dest="pal_split",
+        action="store_true",
+        help="(CI4 Only) Assigns one palette per CI4 frame in an animation.",
     )
 
     parser.add_argument(

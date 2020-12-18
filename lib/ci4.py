@@ -102,11 +102,18 @@ def make_ci4_sprite(args, anim):
 	pal_list = []
 	if anim == 1:
 		for i in range(len(ls(args.input_file))):
-			gal_list = []
-			o_buf += handle_ci4_animated(args.input_file, gal_list, args.sprite_name, i)
-			o_buf += align_tex(args.sprite_name, i) + "\n"
-			pal_list.append(gal_list)
-		o_buf+=make_ani_palette(pal_list, args.sprite_name)
+			if args.pal_split:
+				gal_list = []
+				o_buf += handle_ci4_animated(args.input_file, gal_list, args.sprite_name, i)
+				o_buf += align_tex(args.sprite_name, i) + "\n"
+				pal_list.append(gal_list)
+			else:
+				o_buf += handle_ci4_animated(args.input_file, pal_list, args.sprite_name, i)
+				o_buf += align_tex(args.sprite_name, i) + "\n"
+		if args.pal_split:
+			o_buf+=make_ani_palette(pal_list, args.sprite_name)
+		else:
+			o_buf += make_palette(pal_list, args.sprite_name)
 		o_buf += "\n"
 	else:
 		o_buf += handle_ci4(args.input_file, pal_list, args.sprite_name)
@@ -115,7 +122,10 @@ def make_ci4_sprite(args, anim):
 	if anim == 1:
 		o_buf += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		o_buf += "\n"
-		o_buf += str(UObjAniTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list), pal_list))
+		if args.pal_split:
+			o_buf += str(UObjAniTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list), pal_list))
+		else:
+			o_buf += str(UObjTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list)))
 	else:
 		o_buf += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		o_buf += "\n"
