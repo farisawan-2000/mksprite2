@@ -93,3 +93,22 @@ def make_ani_sprite_dl(args):
 	])
 	imstr+="\n}"
 	return imstr
+
+def make_ani_sprite_dl_ci(args):
+	imstr = make_mtx_setup(args)
+	imstr += "void call_%s_sprite_dl(int idx, int x, int y, uObjMtx *buffer, int buf_idx) {\n" % args.sprite_name
+	imstr += '\n'.join([
+	"\tgDPPipeSync(%s++);" % args.dl_head,
+	''.join(["\tgSPDisplayList(%s++, s2d_init_dl);" % args.dl_head]) if args.init_dl else "",
+	"\tgDPSetCycleType(%s++, G_CYC_1CYCLE);" % args.dl_head,
+	"\tgDPSetRenderMode(%s++, G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2);" % args.dl_head,
+	"\tgDPSetTextureLUT(%s++, G_TT_RGBA16);" % args.dl_head,
+	"\tgSPObjRenderMode(%s++, G_OBJRM_XLU | G_OBJRM_BILERP);" % args.dl_head,
+	"\tgSPObjLoadTxtr(%s++, &%s_tex[idx]);" % (args.dl_head, args.sprite_name),
+	"\tgSPObjLoadTxtr(%s++, &%s_pal_TLUT);" % (args.dl_head, args.sprite_name),
+	"\tsetup_mtx(&buffer[buf_idx], x, y, 1);",
+	"\tgSPObjMatrix(%s++, &buffer[buf_idx]);" % args.dl_head,
+	"\tgSPObjSprite(%s++, &%s_obj);" % (args.dl_head, args.sprite_name),
+	])
+	imstr+="\n}"
+	return imstr

@@ -3,10 +3,10 @@ from PIL import Image, GifImagePlugin
 import argparse
 import enum
 import sys, os
-try:
-	import argcomplete  # type: ignore
-except ModuleNotFoundError:
-    argcomplete = None
+# try:
+# 	import argcomplete  # type: ignore
+# except ModuleNotFoundError:
+#     argcomplete = None
 
 # My lib/ functions
 from lib.img_converters import to5551, to8888, toia8, toci4
@@ -16,8 +16,8 @@ from lib.dl_handler import *
 
 parser = get_parser()
 
-if argcomplete:
-    argcomplete.autocomplete(parser)
+# if argcomplete:
+#     argcomplete.autocomplete(parser)
 
 class Mode(enum.Enum):
 	SPRITE = 0
@@ -135,6 +135,8 @@ def handle_animated_sprite(infile):
 	imstr=get_image_header(args.sprite_name)
 	with Image.open(infile) as img:
 		width, height = img.size
+		print(img.size)
+		print(width, height)
 		for i in range(height):
 			for j in range(width):
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
@@ -199,6 +201,8 @@ def gen_header(args):
 		imstr += "extern %s %s_tex_0[];\n" % (get_image_ultratype()[0], args.sprite_name)
 	for i in range(img_count):
 		imstr += "extern %s %s_tex_%d[];\n" % (get_image_ultratype()[0], args.sprite_name, i)
+	if args.fmt == "CI4":
+		imstr += "extern uObjTxtrTLUT_t %s_pal_TLUT;\n" % args.sprite_name
 	return imstr
 
 
@@ -207,11 +211,14 @@ def print_warning(mode):
 	print("\tit's best to include your sprites in an assets file.\n")
 
 
-
 output_buffer = ""
 from lib.ci4 import make_ci4_sprite
 if args.fmt == "CI4":
-	output_buffer += make_ci4_sprite(args)
+	if mode == Mode.ANI_SPRITE:
+		output_buffer += make_ci4_sprite(args, 1)
+		img_count = len(ls(args.input_file))
+	else:
+		output_buffer += make_ci4_sprite(args, 0)
 else:
 	if mode == Mode.SPRITE:
 		if args.fmt == "CI4":
@@ -235,6 +242,7 @@ else:
 			output_buffer += align_tex(args.sprite_name, i)
 			output_buffer += "\n"
 			img_count+=1
+		print(width, height)
 		if args.init_dl:
 			output_buffer += make_s2d_init_dl()
 		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
