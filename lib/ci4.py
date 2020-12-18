@@ -39,6 +39,16 @@ def make_palette(lst, nm):
 	o += "};\n"
 	return o;
 
+def make_ani_palette(lst, nm):
+	o = ""
+	d = 0
+	for list_el in lst:
+		o += get_image_header(nm+"_pal", 1, d)
+		for el in list_el:
+			o+=(get_image_ultratype(1)[1] % convert_rgba16(el))+", "
+		o += "};\n"
+		d+=1
+	return o;
 
 
 def handle_ci4(infile, lst, nm):
@@ -92,18 +102,24 @@ def make_ci4_sprite(args, anim):
 	pal_list = []
 	if anim == 1:
 		for i in range(len(ls(args.input_file))):
-			o_buf += handle_ci4_animated(args.input_file, pal_list, args.sprite_name, i)
+			gal_list = []
+			o_buf += handle_ci4_animated(args.input_file, gal_list, args.sprite_name, i)
 			o_buf += align_tex(args.sprite_name, i) + "\n"
+			pal_list.append(gal_list)
+		o_buf+=make_ani_palette(pal_list, args.sprite_name)
+		o_buf += "\n"
 	else:
 		o_buf += handle_ci4(args.input_file, pal_list, args.sprite_name)
-	o_buf+=make_palette(pal_list, args.sprite_name)
+		o_buf+=make_palette(pal_list, args.sprite_name)
 	print(width, height)
 	if anim == 1:
 		o_buf += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
+		o_buf += "\n"
+		o_buf += str(UObjAniTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list), pal_list))
 	else:
 		o_buf += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
-	o_buf += "\n"
-	o_buf += str(UObjTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list)))
+		o_buf += "\n"
+		o_buf += str(UObjTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list)))
 	if args.init_dl:
 		o_buf += make_s2d_init_dl()
 	o_buf += str(UObjMtx(1, 1, 50, 50, args.sprite_name))

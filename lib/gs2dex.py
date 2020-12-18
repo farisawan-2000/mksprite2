@@ -108,11 +108,12 @@ class UObjTLUT(UObjTxtr):
 
 class UObjAniTLUT(UObjTxtr):
 	load_type = "G_OBJLT_TLUT"
-	def __init__(self, tp, name, psize, count):
+	def __init__(self, tp, name, psize, lst):
 		self.data_type = "uObjTxtrTLUT_t"
 		self.tex_pointer = tp
 		self.name = name
 		self.psize = psize
+		self.lst = lst
 
 	def get_load_type(self):
 		return "\t"+self.load_type+", \n"
@@ -120,20 +121,21 @@ class UObjAniTLUT(UObjTxtr):
 	def get_img_ptr(self, typ, i):
 		return "\t(%s) &%s," % (typ, self.name+"_tex_"+str(i))
 
-	def get_image(self):
-		return self.get_img_ptr("u64 *")+" /* image */\n"
+	def get_image(self, i):
+		return self.get_img_ptr("u64 *", i)+" /* image */\n"
 
 	def get_flag(self, count):
 		return self.get_img_ptr("u32", count)+" /* flag */\n"
 
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_TLUT[]",'=','{'])+'\n'
-		for i in range(self.count):
+		for i in range(len(self.lst)):
 			s_str += "{\n"
 			s_str += self.get_load_type()
-			s_str += self.get_image()
+			s_str += self.get_image(i)
+			# s_str += "\t"+Gs2dex.gs_pal_head(i)
 			s_str += "\t"+Gs2dex.gs_pal_head(0)
-			s_str += "\t"+Gs2dex.gs_pal_num(self.psize + 1)
+			s_str += "\t"+Gs2dex.gs_pal_num(len(self.lst[i]))
 			s_str += "\t0,\n"
 			s_str += "\t0, /* sid */\n"
 			s_str += self.get_flag(i)

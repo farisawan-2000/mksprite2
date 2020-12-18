@@ -105,7 +105,8 @@ def make_ani_sprite_dl_ci(args):
 	"\tgDPSetTextureLUT(%s++, G_TT_RGBA16);" % args.dl_head,
 	"\tgSPObjRenderMode(%s++, G_OBJRM_XLU | G_OBJRM_BILERP);" % args.dl_head,
 	"\tgSPObjLoadTxtr(%s++, &%s_tex[idx]);" % (args.dl_head, args.sprite_name),
-	"\tgSPObjLoadTxtr(%s++, &%s_pal_TLUT);" % (args.dl_head, args.sprite_name),
+	# TODO: for now let's do this, but ideally i want all the palettes loaded in
+	"\tgSPObjLoadTxtr(%s++, &%s_pal_TLUT[idx]);" % (args.dl_head, args.sprite_name),
 	"\tsetup_mtx(&buffer[buf_idx], x, y, 1);",
 	"\tgSPObjMatrix(%s++, &buffer[buf_idx]);" % args.dl_head,
 	"\tgSPObjSprite(%s++, &%s_obj);" % (args.dl_head, args.sprite_name),

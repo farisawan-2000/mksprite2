@@ -202,7 +202,10 @@ def gen_header(args):
 	for i in range(img_count):
 		imstr += "extern %s %s_tex_%d[];\n" % (get_image_ultratype()[0], args.sprite_name, i)
 	if args.fmt == "CI4":
-		imstr += "extern uObjTxtrTLUT_t %s_pal_TLUT;\n" % args.sprite_name
+		if mode == Mode.ANI_SPRITE:
+			imstr += "extern uObjTxtrTLUT_t %s_pal_TLUT[];\n" % args.sprite_name
+		else:
+			imstr += "extern uObjTxtrTLUT_t %s_pal_TLUT;\n" % args.sprite_name
 	return imstr
 
 

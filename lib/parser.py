@@ -56,7 +56,7 @@ def get_parser():
     	"-d",
         "--dlheadname",
         dest="dl_head",
-        help="Name of gdl head (default gDisplayListHead for sm64 decomp)",
+        help="Name of gdl head (default gDisplayListHead for SM64 decomp)",
         default="gDisplayListHead",
     )
 
@@ -74,6 +74,13 @@ def get_parser():
         choices=["RGBA16", "RGBA32", "IA8", "CI4"],
         help="Image Format (default RGBA16).",
         default="RGBA16",
+    )
+
+    parser.add_argument(
+        "-p"
+        "--palette",
+        dest="pal_consolidate",
+        help="(CI4 Only) Assigns only one palette to all CI4 textures in animated mode.",
     )
 
     parser.add_argument(
