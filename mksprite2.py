@@ -133,10 +133,11 @@ def handle_animated_sprite(infile):
 	global width
 	global height
 	imstr=get_image_header(args.sprite_name)
+	print(infile)
 	with Image.open(infile) as img:
 		width, height = img.size
-		print(img.size)
-		print(width, height)
+		# print(img.size)
+		# print(width, height)
 		for i in range(height):
 			for j in range(width):
 				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "

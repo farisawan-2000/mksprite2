@@ -73,6 +73,7 @@ def handle_ci4_animated(infile, lst, nm, count):
 	global width
 	global height
 	imstr=get_image_header(nm, 0, count)
+	print(infile+str(count)+".png")
 	with Image.open(infile+str(count)+".png") as img:
 		width, height = img.size
 		for i in range(height):
