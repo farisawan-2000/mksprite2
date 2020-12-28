@@ -98,6 +98,7 @@ def align_tex(n, x):
 	return "Gfx "+n+"_align_"+str(x)+"[] = {gsSPEndDisplayList()};\n"
 
 def make_ci4_sprite(args, anim):
+	print(anim)
 	o_buf = ""
 	o_buf += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	pal_list = []
@@ -111,11 +112,13 @@ def make_ci4_sprite(args, anim):
 			else:
 				o_buf += handle_ci4_animated(args.input_file, pal_list, args.sprite_name, i)
 				o_buf += align_tex(args.sprite_name, i) + "\n"
+				print(pal_list)
 		if args.pal_split:
 			o_buf+=make_ani_palette(pal_list, args.sprite_name)
 		else:
 			o_buf += make_palette(pal_list, args.sprite_name)
 		o_buf += "\n"
+		# print(set(pal_list))
 	else:
 		o_buf += handle_ci4(args.input_file, pal_list, args.sprite_name)
 		o_buf+=make_palette(pal_list, args.sprite_name)
