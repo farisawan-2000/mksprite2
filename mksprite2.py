@@ -108,7 +108,7 @@ def get_image_ultratype():
 		return ["u8", "0x%02X"]
 
 def get_image_header(i):
-	rt = "ALIGNED8 %s " % get_image_ultratype()[0]
+	rt = "__attribute__((aligned(8))) %s " % get_image_ultratype()[0]
 	return rt + get_image_sym(i, img_count)+"[] = {"
 
 def align_tex(n, x):
@@ -117,7 +117,7 @@ def align_tex(n, x):
 def handle_static_sprite(infile):
 	global width
 	global height
-	imstr = "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
+	imstr = "#include <ultra64.h>\n#include <PR/gs2dex.h>\n"
 	imstr+=get_image_header(args.sprite_name)
 	with Image.open(infile) as img:
 		width, height = img.size
@@ -187,7 +187,7 @@ def gen_header(args):
 	imstr += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	if args.init_dl:
 		imstr += "extern Gfx s2d_init_dl[];\n"
-	imstr += "extern uObjTxtr %s_tex%s;\n" % (args.sprite_name, "[]" if img_count > 0 else "")
+	imstr += "extern uObjTxtrBlock_t %s_tex%s;\n" % (args.sprite_name, "[]" if img_count > 0 else "")
 	if not args.bgrect:
 		imstr += "extern uObjMtx %s_mtx;\n" % args.sprite_name
 		imstr += "extern uObjSprite %s_obj;\n" % args.sprite_name

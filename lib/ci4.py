@@ -29,7 +29,7 @@ def get_image_ultratype(t):
 		return ["u16", "0x%04X"]
 
 def get_image_header(i, t, c):
-	rt = "ALIGNED8 %s " % get_image_ultratype(t)[0]
+	rt = "__attribute__((aligned(8))) %s " % get_image_ultratype(t)[0]
 	return rt + get_image_sym(i, c)+"[] = {"
 
 def make_palette(lst, nm):
@@ -100,7 +100,7 @@ def align_tex(n, x):
 def make_ci4_sprite(args, anim):
 	print(anim)
 	o_buf = ""
-	o_buf += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
+	o_buf += "#include <ultra64.h>\n#include <PR/gs2dex.h>\n"
 	pal_list = []
 	if anim == 1:
 		for i in range(len(ls(args.input_file))):
