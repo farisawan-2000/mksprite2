@@ -56,6 +56,7 @@ def handle_ci4(infile, lst, nm):
 	global height
 	imstr=get_image_header(nm, 0, 0)
 	with Image.open(infile) as img:
+		img = img.convert('RGB')
 		width, height = img.size
 		for i in range(height):
 			for j in range(width)[::2]:
@@ -75,6 +76,7 @@ def handle_ci4_animated(infile, lst, nm, count):
 	imstr=get_image_header(nm, 0, count)
 	print(infile+str(count)+".png")
 	with Image.open(infile+str(count)+".png") as img:
+		img = img.convert('RGB')
 		width, height = img.size
 		for i in range(height):
 			for j in range(width)[::2]:

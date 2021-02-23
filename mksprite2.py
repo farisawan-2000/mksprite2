@@ -120,6 +120,7 @@ def handle_static_sprite(infile):
 	imstr = "#include <ultra64.h>\n#include <PR/gs2dex.h>\n"
 	imstr+=get_image_header(args.sprite_name)
 	with Image.open(infile) as img:
+		img = img.convert('RGBA')
 		width, height = img.size
 		for i in range(height):
 			for j in range(width):
@@ -135,6 +136,7 @@ def handle_animated_sprite(infile):
 	imstr=get_image_header(args.sprite_name)
 	print(infile)
 	with Image.open(infile) as img:
+		img = img.convert('RGBA')
 		width, height = img.size
 		# print(img.size)
 		# print(width, height)
