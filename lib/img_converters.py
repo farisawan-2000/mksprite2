@@ -1,7 +1,7 @@
 
 clamp = lambda x : (int(x) & 0x1F)
 def to5551(t):
-	print(t)
+	# print(t)
 	r = (t[0] / 255) * 31
 	g = (t[1] / 255) * 31
 	b = (t[2] / 255) * 31
