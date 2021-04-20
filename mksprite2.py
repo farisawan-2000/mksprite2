@@ -191,7 +191,7 @@ def gen_header(args):
 	imstr += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
 	if args.init_dl:
 		imstr += "extern Gfx s2d_init_dl[];\n"
-	imstr += "extern uObjTxtrBlock_t %s_tex%s;\n" % (args.sprite_name, "[]" if img_count > 0 else "")
+	imstr += "extern uObjTxtr %s_tex%s;\n" % (args.sprite_name, "[]" if img_count > 0 else "")
 	if not args.bgrect:
 		imstr += "extern uObjMtx %s_mtx;\n" % args.sprite_name
 		imstr += "extern uObjSprite %s_obj;\n" % args.sprite_name
@@ -297,7 +297,7 @@ if args.header_file:
 		f.write(gen_header(args))
 		if args.isfont:
 			f.write("\n")
-			f.write("extern char %s_obj_dropshadow[];\n" % args.sprite_name)
+			f.write("extern uObjSprite %s_obj_dropshadow;\n" % args.sprite_name)
 
 from kerning_table_generator import *
 with open(args.output_file, "w+") as f:

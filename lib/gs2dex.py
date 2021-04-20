@@ -14,8 +14,8 @@ class Gs2dex:
 		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % (-(h / 2), h)
 		return ret
 	def sprite_dim_centered_shadow(w, h):
-		ret =  "\t%d<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, unused */\n" % ((-(w / 2)) + 1, w)
-		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % ((-(h / 2)) + 1, h)
+		ret =  "\t%d<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, unused */\n" % ((-(w / 2)) + 8, w)
+		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % ((-(h / 2)) + 8, h)
 		return ret
 	def sprite_dim(w, h):
 		return Gs2dex.sprite_dim_pos(0, 0, w, h)
