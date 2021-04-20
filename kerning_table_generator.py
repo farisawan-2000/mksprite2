@@ -46,5 +46,3 @@ def get_kerning_table(name, idir):
 		ret += "\t/* %c */  %d,\n" % (i, get_image_width(idir+str(i)+".png"))
 	ret += "};\n"
 	return ret
-
-print(get_kerning_table(sys.argv[1], sys.argv[2]))

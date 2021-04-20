@@ -184,6 +184,8 @@ def make_bg():
 	])
 	return imstr+"\n\n"
 
+print(args.bgrect)
+
 def gen_header(args):
 	imstr = ""
 	imstr += "#include <PR/ultratypes.h>\n#include <PR/gs2dex.h>\n"
@@ -254,6 +256,8 @@ else:
 		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
+		if args.isfont:
+			output_buffer += str(UObjSpriteDropShadow(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 		if args.create_dl:
 			if img_count > 0:
 				output_buffer += make_ani_sprite_dl(args)
@@ -291,9 +295,18 @@ else:
 if args.header_file:
 	with open(args.header_file, "w+") as f:
 		f.write(gen_header(args))
+		if args.isfont:
+			f.write("\n")
+			f.write("extern char %s_obj_dropshadow[];\n" % args.sprite_name)
 
+from kerning_table_generator import *
 with open(args.output_file, "w+") as f:
 	f.write(output_buffer)
 	f.write("// "+str(width)+" "+str(height))
+	if args.isfont:
+		f.write("\n")
+		f.write(get_kerning_table(args.sprite_name, args.input_file))
+
+
 
 print("Done.")

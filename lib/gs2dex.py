@@ -9,6 +9,14 @@ class Gs2dex:
 		ret =  "\t%d<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, unused */\n" % (x, w)
 		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % (y, h)
 		return ret
+	def sprite_dim_centered(w, h):
+		ret =  "\t%d<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, unused */\n" % (-(w / 2), w)
+		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % (-(h / 2), h)
+		return ret
+	def sprite_dim_centered_shadow(w, h):
+		ret =  "\t%d<<2, 1<<10, %d<<5, 0,          /* objX, scaleX, imageW, unused */\n" % ((-(w / 2)) + 1, w)
+		ret += "\t%d<<2, 1<<10, %d<<5, 0,          /* objY, scaleY, imageH, unused */\n" % ((-(h / 2)) + 1, h)
+		return ret
 	def sprite_dim(w, h):
 		return Gs2dex.sprite_dim_pos(0, 0, w, h)
 	def gs_pal_head(o):
@@ -201,6 +209,22 @@ class UObjSprite(S2dType):
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_obj",'=','{'])+'\n'
 		s_str += Gs2dex.sprite_dim(self.width, self.height)
+		if self.tex_bitsize == "32":
+			s_str += self.get_img_stride_32()
+		else:
+			s_str += self.get_img_stride_16()
+		s_str += self.get_img_addr()
+		s_str += self.get_img_fmt()
+		s_str += self.get_img_siz()
+		s_str += self.get_img_pal()
+		s_str += self.get_img_flags()
+		s_str += "};\n"
+		return s_str
+
+class UObjSpriteDropShadow(UObjSprite):
+	def __str__(self):
+		s_str =  ' '.join([self.data_type, self.name + "_obj_dropshadow",'=','{'])+'\n'
+		s_str += Gs2dex.sprite_dim_centered(self.width, self.height)
 		if self.tex_bitsize == "32":
 			s_str += self.get_img_stride_32()
 		else:

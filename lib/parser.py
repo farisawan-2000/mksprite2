@@ -85,10 +85,20 @@ def get_parser():
     )
 
     parser.add_argument(
+        "-k",
+        "--makefont",
+        dest="isfont",
+        action="store_true",
+        help="(S2D Text Engine) Optimizes the output file for use with Text Engine.",
+    )
+
+    parser.add_argument(
     	"-a",
         "--autoresize",
         dest="autoresize",
         action="store_true",
         help="(N.I.) If a sprite/object isn't sized correctly for LoadBlock, resize it automatically",
     )
+
+
     return parser
