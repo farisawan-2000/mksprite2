@@ -208,7 +208,7 @@ class UObjSprite(S2dType):
 
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_obj",'=','{'])+'\n'
-		s_str += Gs2dex.sprite_dim(self.width, self.height)
+		s_str += Gs2dex.sprite_dim_centered(self.width, self.height)
 		if self.tex_bitsize == "32":
 			s_str += self.get_img_stride_32()
 		else:
@@ -224,7 +224,7 @@ class UObjSprite(S2dType):
 class UObjSpriteDropShadow(UObjSprite):
 	def __str__(self):
 		s_str =  ' '.join([self.data_type, self.name + "_obj_dropshadow",'=','{'])+'\n'
-		s_str += Gs2dex.sprite_dim_centered(self.width, self.height)
+		s_str += Gs2dex.sprite_dim_centered_shadow(self.width, self.height)
 		if self.tex_bitsize == "32":
 			s_str += self.get_img_stride_32()
 		else:
