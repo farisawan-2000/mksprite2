@@ -56,7 +56,7 @@ def handle_ci4(infile, lst, nm):
 	global height
 	imstr=get_image_header(nm, 0, 0)
 	with Image.open(infile) as img:
-		img = img.convert('RGB')
+		img = img.convert('RGBA')
 		width, height = img.size
 		for i in range(height):
 			for j in range(width)[::2]:
@@ -76,7 +76,7 @@ def handle_ci4_animated(infile, lst, nm, count):
 	imstr=get_image_header(nm, 0, count)
 	print(infile+str(count)+".png")
 	with Image.open(infile+str(count)+".png") as img:
-		img = img.convert('RGB')
+		img = img.convert('RGBA')
 		width, height = img.size
 		for i in range(height):
 			for j in range(width)[::2]:
@@ -137,7 +137,7 @@ def make_ci4_sprite(args, anim):
 		o_buf += "\n"
 		o_buf += str(UObjTLUT(get_image_sym(args.sprite_name+"_pal", 0), args.sprite_name+"_pal", len(pal_list)))
 	if args.init_dl:
-		o_buf += make_s2d_init_dl()
+		o_buf += make_s2d_init_dl(args.sprite_name)
 	o_buf += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 	o_buf += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 	if args.create_dl:

@@ -236,7 +236,7 @@ else:
 		print(width, height)
 		output_buffer += str(UObjTxtr(width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		if args.init_dl:
-			output_buffer += make_s2d_init_dl()
+			output_buffer += make_s2d_init_dl(args.sprite_name)
 		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
 		if args.create_dl:
@@ -252,7 +252,7 @@ else:
 			img_count+=1
 		print(width, height)
 		if args.init_dl:
-			output_buffer += make_s2d_init_dl()
+			output_buffer += make_s2d_init_dl(args.sprite_name)
 		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))
@@ -266,7 +266,7 @@ else:
 	elif mode == Mode.BGRECT:
 		output_buffer += handle_static_sprite(args.input_file)
 		if args.init_dl:
-			output_buffer += make_s2d_init_dl()
+			output_buffer += make_s2d_init_dl(args.sprite_name)
 		output_buffer += make_bg()
 		if args.create_dl:
 			output_buffer += make_bg_dl(args)
@@ -280,7 +280,7 @@ else:
 			output_buffer += "\n\n"
 			img_count+=1
 		if args.init_dl:
-			output_buffer += make_s2d_init_dl()
+			output_buffer += make_s2d_init_dl(args.sprite_name)
 		output_buffer += str(UObjAniTxtr(len(ls(args.input_file)), width, height, get_image_fmt(), get_image_size(), get_image_sym(args.sprite_name, 0), args.sprite_name))
 		output_buffer += str(UObjMtx(1, 1, 50, 50, args.sprite_name))
 		output_buffer += str(UObjSprite(width, height, get_image_fmt(), get_image_size(), args.sprite_name))

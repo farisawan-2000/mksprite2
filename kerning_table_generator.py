@@ -5,7 +5,9 @@ def get_image_width(fname):
 	arr = []
 	earliest_start = []
 	with Image.open(fname) as img:
+		img = img.convert('RGBA')
 		width, height = img.size
+		# print(fname, width, height)
 		for i in range(height):
 			a1 = [img.getpixel((o, i)) for o in range(width)]
 			a2 = a1[::-1]

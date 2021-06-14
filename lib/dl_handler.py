@@ -1,7 +1,7 @@
 import argparse
 
-def make_s2d_init_dl():
-	istr = "Gfx s2d_init_dl[] = {\n"+\
+def make_s2d_init_dl(name):
+	istr = "Gfx %s_init_dl[] = {\n" % name+\
 	'\n'.join([
 	"\tgsDPPipeSync(),",
 	"\tgsDPSetTexturePersp(G_TP_NONE),",
@@ -19,7 +19,7 @@ def make_bg_dl(args):
 	imstr = "Gfx %s_bg_dl[] = {\n" % args.sprite_name
 	imstr += '\n'.join([
 	"\tgsDPPipeSync(),",
-	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
+	"\tgsSPDisplayList(%s_init_dl)," % args.sprite_name if args.init_dl else "",
 	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
 	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
 	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
@@ -33,7 +33,7 @@ def make_sprite_dl(args, icount):
 	imstr = "Gfx %s_sprite_dl[] = {\n" % args.sprite_name
 	imstr += '\n'.join([
 	"\tgsDPPipeSync(),",
-	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
+	"\tgsSPDisplayList(%s_init_dl)," % args.sprite_name if args.init_dl else "",
 	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
 	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
 	"\tgsSPObjRenderMode(G_OBJRM_XLU | G_OBJRM_BILERP),",
@@ -49,7 +49,7 @@ def make_sprite_dl_ci(args, icount):
 	imstr = "Gfx %s_sprite_dl[] = {\n" % args.sprite_name
 	imstr += '\n'.join([
 	"\tgsDPPipeSync(),",
-	"\tgsSPDisplayList(s2d_init_dl)," if args.init_dl else "",
+	"\tgsSPDisplayList(%s_init_dl)," % args.sprite_name if args.init_dl else "",
 	"\tgsDPSetCycleType(G_CYC_1CYCLE),",
 	"\tgsDPSetRenderMode(G_RM_XLU_SPRITE, G_RM_XLU_SPRITE2),",
 	"\tgsDPSetTextureLUT(G_TT_RGBA16),"
