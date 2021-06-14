@@ -9,7 +9,7 @@ import sys, os
 #     argcomplete = None
 
 # My lib/ functions
-from lib.img_converters import to5551, to8888, toia8, toci4
+from lib.img_converters import to5551, to8888, toia8, toci4, toi4
 from lib.parser import get_parser
 from lib.gs2dex import *
 from lib.dl_handler import *
@@ -59,6 +59,7 @@ convert_rgba16 = lambda x : to5551(x)
 convert_rgba32 = lambda x : to8888(x)
 convert_ia8 = lambda x : toia8(x)
 convert_ci4 = lambda x, y, z : toci4(x, y, z)
+convert_i4 = lambda x, y : toi4(x, y)
 convert_texel = convert_rgba16
 
 if args.fmt == "RGBA32":
@@ -69,6 +70,8 @@ if args.fmt in ["IA8"]:
 	convert_texel = convert_ia8
 if args.fmt in ["CI4"]:
 	convert_texel = convert_ci4
+if args.fmt in ["I4"]:
+	convert_texel = convert_i4
 
 img_count = 0
 
@@ -84,6 +87,8 @@ def get_image_fmt():
 		return "G_IM_FMT_RGBA"
 	if args.fmt in ["IA16", "IA8", "IA4"]:
 		return "G_IM_FMT_IA"
+	if args.fmt in["I4"]:
+		return "G_IM_FMT_I"
 	if args.fmt in ["CI8", "CI4"]:
 		return "G_IM_FMT_CI"
 
@@ -104,7 +109,7 @@ def get_image_ultratype():
 		return ["u32", "0x%08X"]
 	if args.fmt == "IA8":
 		return ["u8", "0x%02X"]
-	if args.fmt == "CI4":
+	if args.fmt in ["CI4", "I4"]:
 		return ["u8", "0x%02X"]
 
 def get_image_header(i):
@@ -123,8 +128,12 @@ def handle_static_sprite(infile):
 		img = img.convert('RGBA')
 		width, height = img.size
 		for i in range(height):
-			for j in range(width):
-				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
+			if args.fmt == "I4":
+				for j in range(width)[::2]:
+					imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)), img.getpixel((j+1, i))))+", "
+			else:
+				for j in range(width):
+					imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n"
 	imstr += align_tex(args.sprite_name, 0) + "\n"
@@ -141,8 +150,12 @@ def handle_animated_sprite(infile):
 		# print(img.size)
 		# print(width, height)
 		for i in range(height):
-			for j in range(width):
-				imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
+			if args.fmt == "I4":
+				for j in range(width)[::2]:
+					imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i)), img.getpixel((j+1, i))))+", "
+			else:
+				for j in range(width):
+					imstr+= (get_image_ultratype()[1] % convert_texel(img.getpixel((j, i))))+", "
 
 	imstr+= "};\n"
 	return imstr
